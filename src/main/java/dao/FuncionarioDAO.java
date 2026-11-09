@@ -73,7 +73,7 @@ public class FuncionarioDAO {
     }
 
     // 4. Pesquisa pela Matrícula
-    public Funcionario buscar(int matricula) {
+    public Funcionario buscarPorMatricula(int matricula) {
         String sql = "SELECT matricula, nome, idade, tipo, departamento, funcao FROM funcionarios WHERE matricula = ?";
 
         try (Connection conexao = Conexao.conectar();
@@ -128,7 +128,7 @@ public class FuncionarioDAO {
     }
 
     // 6. Exclusão de Funcionário
-    public boolean remover(int matricula) {
+    public boolean excluir(int matricula) {
         String sql = "DELETE FROM funcionarios WHERE matricula = ?";
 
         try (Connection conexao = Conexao.conectar();

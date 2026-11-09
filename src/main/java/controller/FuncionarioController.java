@@ -1,5 +1,3 @@
-package controller;
-
 package controller; // Declaração do pacote controller
 
 import dao.FuncionarioDAO; // Importa a classe FuncionarioDAO do pacote dao
