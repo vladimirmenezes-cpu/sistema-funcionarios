@@ -2,89 +2,88 @@ package view;
 import controller.FuncionarioController;
 import model.Funcionario;
 import model.Gerente;
+import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import java.util.List;
-import java.util.Scanner;
 public class FuncionarioView {
+    private static final String TITULO = "Sistema de Funcionários";
     private final FuncionarioController controller = new FuncionarioController();
-    private final Scanner scanner = new Scanner(System.in);
 
     public void menu() {
-        int opcao = -1;
-        while (opcao != 0) {
-            System.out.println();
-            System.out.println("=== SISTEMA DE FUNCIONARIOS ===");
-            System.out.println("1 - Cadastrar");
-            System.out.println("2 - Listar");
-            System.out.println("3 - Pesquisar por matricula");
-            System.out.println("4 - Alterar");
-            System.out.println("5 - Excluir");
-            System.out.println("0 - Sair");
-            System.out.print("Opcao: ");
-            try {
-                opcao = Integer.parseInt(scanner.nextLine().trim());
-            } catch (NumberFormatException e) {
-                opcao = -1;
+        String[] opcoes = {"Cadastrar", "Listar", "Pesquisar", "Alterar", "Excluir", "Sair"};
+        int opcao;
+
+        do {
+            opcao = JOptionPane.showOptionDialog(
+                    null,
+                    "Escolha uma opção:",
+                    TITULO,
+                    JOptionPane.DEFAULT_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    opcoes,
+                    opcoes[0]
+            );
+
+            switch (opcao) {
+                case 0 -> cadastrar();
+                case 1 -> listar();
+                case 2 -> pesquisar();
+                case 3 -> alterar();
+                case 4 -> excluir();
+                default -> { } 
             }
-            if (opcao == 1) {
-                cadastrar();
-            } else if (opcao == 2) {
-                listar();
-            } else if (opcao == 3) {
-                pesquisar();
-            } else if (opcao == 4) {
-                alterar();
-            } else if (opcao == 5) {
-                excluir();
-            } else if (opcao == 0) {
-                System.out.println("Sistema encerrado.");
-            } else {
-                System.out.println("Opcao invalida! Tente novamente.");
-            }
-        }
+        } while (opcao != 5 && opcao != JOptionPane.CLOSED_OPTION);
+
+        informar("Sistema encerrado.");
     }
 
     private void cadastrar() {
-        System.out.println("1 - Gerente");
-        System.out.println("2 - Operador");
-        System.out.print("Tipo: ");
-        String tipo = scanner.nextLine().trim();
+        String[] tipos = {"Gerente", "Operador"};
+        int tipo = JOptionPane.showOptionDialog(
+                null,
+                "Qual o tipo de funcionário?",
+                TITULO,
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                tipos,
+                tipos[0]
+        );
 
-        if (!"1".equals(tipo) && !"2".equals(tipo)) {
-            System.out.println("Erro: tipo invalido!");
+        if (tipo == JOptionPane.CLOSED_OPTION) {
             return;
         }
+
         try {
-            System.out.print("Matricula: ");
-            int matricula = Integer.parseInt(scanner.nextLine().trim());
-            System.out.print("Nome: ");
-            String nome = scanner.nextLine();
+            Integer matricula = lerInteiro("Matrícula:");
+            if (matricula == null) return;
 
-            System.out.print("Idade: ");
-            int idade = Integer.parseInt(scanner.nextLine().trim());
+            String nome = pedir("Nome:", "");
+            if (nome == null) return;
 
-            if ("1".equals(tipo)) {
-                System.out.print("Departamento: ");
-                String departamento = scanner.nextLine();
+            Integer idade = lerInteiro("Idade:");
+            if (idade == null) return;
 
-                System.out.println(
-                        controller.cadastrarGerente(
-                                matricula, nome, idade, departamento
-                        )
-                );
+            String resultado;
+
+            if (tipo == 0) {
+                String departamento = pedir("Departamento:", "");
+                if (departamento == null) return;
+
+                resultado = controller.cadastrarGerente(matricula, nome, idade, departamento);
             } else {
-                System.out.print("Funcao: ");
-                String funcao = scanner.nextLine();
+                String funcao = pedir("Função:", "");
+                if (funcao == null) return;
 
-                System.out.println(
-                        controller.cadastrarOperador(
-                                matricula, nome, idade, funcao
-                        )
-                );
+                resultado = controller.cadastrarOperador(matricula, nome, idade, funcao);
             }
+
+            mostrarResultado(resultado);
+
         } catch (NumberFormatException e) {
-            System.out.println(
-                    "Erro: digite apenas numeros na matricula e na idade!"
-            );
+            erro("Digite apenas números na matrícula e na idade!");
         }
     }
 
@@ -92,86 +91,145 @@ public class FuncionarioView {
         List<Funcionario> lista = controller.listarTodos();
 
         if (lista.isEmpty()) {
-            System.out.println("Nenhum funcionario cadastrado.");
-        } else {
-            for (Funcionario f : lista) {
-                System.out.println(f);
-                System.out.println("-----------------------");
-            }
+            informar("Nenhum funcionário cadastrado.");
+            return;
         }
+
+        StringBuilder sb = new StringBuilder();
+        for (Funcionario f : lista) {
+            sb.append(f).append("\n-----------------------\n");
+        }
+
+        JTextArea area = new JTextArea(sb.toString(), 18, 36);
+        area.setEditable(false);
+        area.setCaretPosition(0);
+
+        JOptionPane.showMessageDialog(
+                null,
+                new JScrollPane(area),
+                TITULO + " - Lista (" + lista.size() + ")",
+                JOptionPane.PLAIN_MESSAGE
+        );
     }
 
     private void pesquisar() {
         try {
-            System.out.print("Matricula: ");
-            int matricula = Integer.parseInt(scanner.nextLine().trim());
+            Integer matricula = lerInteiro("Matrícula:");
+            if (matricula == null) return;
+
             Funcionario f = controller.buscarPorMatricula(matricula);
 
             if (f == null) {
-                System.out.println("Funcionario nao encontrado!");
+                erro("Funcionário não encontrado!");
             } else {
-                System.out.println(f);
+                informar(f.toString());
             }
         } catch (NumberFormatException e) {
-            System.out.println("Erro: digite apenas numeros!");
+            erro("Digite apenas números!");
         }
     }
 
     private void alterar() {
         try {
-            System.out.print("Matricula do funcionario que quer alterar: ");
-            int matricula = Integer.parseInt(scanner.nextLine().trim());
+            Integer matricula = lerInteiro("Matrícula do funcionário que quer alterar:");
+            if (matricula == null) return;
+
             Funcionario f = controller.buscarPorMatricula(matricula);
 
             if (f == null) {
-                System.out.println("Funcionario nao encontrado!");
+                erro("Funcionário não encontrado!");
                 return;
             }
-            System.out.println("Dados atuais:");
-            System.out.println(f);
-            System.out.print("Novo nome: ");
-            String nome = scanner.nextLine();
-            System.out.print("Nova idade: ");
-            int idade = Integer.parseInt(scanner.nextLine().trim());
-            String atributo;
 
-            if (f instanceof Gerente) {
-                System.out.print("Novo departamento: ");
-                atributo = scanner.nextLine();
+            informar("Dados atuais:\n\n" + f);
+
+            String nome = pedir("Novo nome:", f.getNome());
+            if (nome == null) return;
+
+            Integer idade = lerInteiro("Nova idade:", String.valueOf(f.getIdade()));
+            if (idade == null) return;
+
+            String atributo;
+            if (f instanceof Gerente g) {
+                atributo = pedir("Novo departamento:", g.getDepartamento());
             } else {
-                System.out.print("Nova funcao: ");
-                atributo = scanner.nextLine();
+                atributo = pedir("Nova função:", ((model.Operador) f).getFuncao());
             }
-            System.out.println(
-                    controller.alterar(matricula, nome, idade, atributo)
-            );
+            if (atributo == null) return;
+
+            mostrarResultado(controller.alterar(matricula, nome, idade, atributo));
+
         } catch (NumberFormatException e) {
-            System.out.println(
-                    "Erro: digite apenas numeros na matricula e na idade!"
-            );
+            erro("Digite apenas números na matrícula e na idade!");
         }
     }
 
     private void excluir() {
         try {
-            System.out.print("Matricula do funcionario que quer excluir: ");
-            int matricula = Integer.parseInt(scanner.nextLine().trim());
+            Integer matricula = lerInteiro("Matrícula do funcionário que quer excluir:");
+            if (matricula == null) return;
+
             Funcionario f = controller.buscarPorMatricula(matricula);
 
             if (f == null) {
-                System.out.println("Funcionario nao encontrado!");
+                erro("Funcionário não encontrado!");
                 return;
             }
-            System.out.println(f);
-            System.out.print("Tem certeza que quer excluir? (S/N): ");
-            String resposta = scanner.nextLine().trim();
-            if ("S".equalsIgnoreCase(resposta)) {
-                System.out.println(controller.excluir(matricula));
+
+            int resposta = JOptionPane.showConfirmDialog(
+                    null,
+                    f + "\n\nTem certeza que quer excluir?",
+                    TITULO,
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            if (resposta == JOptionPane.YES_OPTION) {
+                mostrarResultado(controller.excluir(matricula));
             } else {
-                System.out.println("Exclusao cancelada.");
+                informar("Exclusão cancelada.");
             }
         } catch (NumberFormatException e) {
-            System.out.println("Erro: digite apenas numeros!");
+            erro("Digite apenas números!");
         }
+    }
+
+    private String pedir(String mensagem, String valorInicial) {
+        Object resposta = JOptionPane.showInputDialog(
+                null,
+                mensagem,
+                TITULO,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                null,
+                valorInicial
+        );
+        return resposta == null ? null : resposta.toString();
+    }
+
+    private Integer lerInteiro(String mensagem) {
+        return lerInteiro(mensagem, "");
+    }
+
+    private Integer lerInteiro(String mensagem, String valorInicial) {
+        String texto = pedir(mensagem, valorInicial);
+        if (texto == null) return null;
+        return Integer.parseInt(texto.trim());
+    }
+
+    private void mostrarResultado(String resultado) {
+        if (resultado.startsWith("Erro")) {
+            erro(resultado);
+        } else {
+            informar(resultado);
+        }
+    }
+
+    private void informar(String mensagem) {
+        JOptionPane.showMessageDialog(null, mensagem, TITULO, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void erro(String mensagem) {
+        JOptionPane.showMessageDialog(null, mensagem, TITULO, JOptionPane.ERROR_MESSAGE);
     }
 }
