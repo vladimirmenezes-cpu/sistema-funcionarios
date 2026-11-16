@@ -10,6 +10,6 @@ CREATE TABLE IF NOT exists funcionarios (
 	funcao varchar(100) null,
     constraint 	regra_cargos check (
     (tipo = 'GERENTE' and departamento is not null and funcao is null) or
-    (tipo = 'operador' and funcao is not null and departamento is null)
+    (tipo = 'OPERADOR' and funcao is not null and departamento is null)
     )
 );
